@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react'
 import { decideRedemption, getAllRedemptions } from '../../api/mockApi'
-import { Alert, Badge, Card, Spinner } from '../../components/ui'
+import { AdminHeader, Alert, Badge, Button, Card, EmptyState, Spinner, Table, td, th } from '../../components/ui'
 import { formatDate } from '../../components/format'
 
-const FILTERS = ['PENDING', 'APPROVED', 'REJECTED', 'ALL']
+const FILTERS = [
+  ['PENDING', 'Waiting'],
+  ['APPROVED', 'Approved'],
+  ['REJECTED', 'Rejected'],
+  ['ALL', 'All'],
+]
 
 export default function Redemptions() {
   const [items, setItems] = useState(null)
@@ -16,7 +21,10 @@ export default function Redemptions() {
   }, [])
 
   async function decide(r, decision) {
-    const msg = decision === 'APPROVED' ? 'Approve this request?' : 'Reject this request? Points will be refunded to the customer.'
+    const msg =
+      decision === 'APPROVED'
+        ? `Approve ${r.rewardName} for ${r.customer?.name}?`
+        : `Reject this request? ${r.pointsCost} points go back to ${r.customer?.name}.`
     if (!window.confirm(msg)) return
     setError('')
     try {
@@ -27,58 +35,75 @@ export default function Redemptions() {
     }
   }
 
-  if (!items) return <Spinner />
+  if (!items) return <Spinner label="Loading requests" />
+  const count = (f) => (f === 'ALL' ? items.length : items.filter((r) => r.status === f).length)
   const shown = filter === 'ALL' ? items : items.filter((r) => r.status === filter)
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Redemption Requests</h1>
+    <>
+      <AdminHeader title="Redemption requests" description="Approve rewards before they are sent. Rejected requests are refunded automatically." />
 
-      <div className="flex gap-2">
-        {FILTERS.map((f) => (
+      <div className="flex flex-wrap gap-2 mb-4" role="tablist">
+        {FILTERS.map(([key, label]) => (
           <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1 rounded-full text-sm ${filter === f ? 'bg-indigo-600 text-white' : 'bg-white border'}`}
+            key={key}
+            role="tab"
+            aria-selected={filter === key}
+            onClick={() => setFilter(key)}
+            className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+              filter === key ? 'bg-ink text-white border-ink' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+            }`}
           >
-            {f}
+            {label} <span className={filter === key ? 'text-white/70' : 'text-slate-400'}>{count(key)}</span>
           </button>
         ))}
       </div>
-      <Alert>{error}</Alert>
+      {error && <div className="mb-4"><Alert>{error}</Alert></div>}
 
       <Card>
         {shown.length === 0 ? (
-          <p className="text-sm text-gray-500">No requests here.</p>
+          <EmptyState
+            icon="inbox"
+            title={filter === 'PENDING' ? 'Nothing waiting for approval' : 'No requests here'}
+            text={filter === 'PENDING' ? 'New reward requests from customers will show up here.' : undefined}
+          />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-left text-gray-500 border-b">
-                <tr><th className="py-2">Date</th><th>Customer</th><th>Reward</th><th>Points</th><th>Status</th><th></th></tr>
-              </thead>
-              <tbody className="divide-y">
-                {shown.map((r) => (
-                  <tr key={r.id}>
-                    <td className="py-2 whitespace-nowrap">{formatDate(r.createdAt)}</td>
-                    <td>{r.customer?.name}<br /><span className="text-xs text-gray-500">{r.customer?.email}</span></td>
-                    <td>{r.rewardName}</td>
-                    <td>{r.pointsCost}</td>
-                    <td><Badge status={r.status} /></td>
-                    <td className="text-right space-x-3 whitespace-nowrap">
-                      {r.status === 'PENDING' && (
-                        <>
-                          <button className="text-green-600 hover:underline" onClick={() => decide(r, 'APPROVED')}>Approve</button>
-                          <button className="text-red-600 hover:underline" onClick={() => decide(r, 'REJECTED')}>Reject</button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <thead>
+              <tr>
+                <th className={th}>Requested</th>
+                <th className={th}>Customer</th>
+                <th className={th}>Reward</th>
+                <th className={th}>Points</th>
+                <th className={th}>Status</th>
+                <th className={th}><span className="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((r) => (
+                <tr key={r.id} className="hover:bg-slate-50">
+                  <td className={`${td} whitespace-nowrap text-slate-500`}>{formatDate(r.createdAt)}</td>
+                  <td className={td}>
+                    <p className="font-medium text-ink">{r.customer?.name}</p>
+                    <p className="text-xs text-slate-500">{r.customer?.email}</p>
+                  </td>
+                  <td className={td}>{r.rewardName}</td>
+                  <td className={`${td} font-display font-bold text-ink`}>{r.pointsCost}</td>
+                  <td className={td}><Badge status={r.status} /></td>
+                  <td className={`${td} text-right whitespace-nowrap space-x-1`}>
+                    {r.status === 'PENDING' && (
+                      <>
+                        <Button variant="success" size="sm" onClick={() => decide(r, 'APPROVED')}>Approve</Button>
+                        <Button variant="ghost" size="sm" className="!text-red-600" onClick={() => decide(r, 'REJECTED')}>Reject</Button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
         )}
       </Card>
-    </div>
+    </>
   )
 }

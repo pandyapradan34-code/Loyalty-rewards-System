@@ -1,1 +1,82 @@
 @import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Design tokens
+   ink      – deep navy, like the print ink on a carton
+   kraft    – corrugated cardboard brown (the box itself)
+   marigold – points / rewards (used sparingly)
+   ------------------------------------------------------------------ */
+@theme {
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-ink: #1d2b53;
+  --color-ink-soft: #33427a;
+  --color-kraft: #c8a27a;
+  --color-kraft-dark: #8a6a47;
+  --color-kraft-light: #f1e6d8;
+  --color-marigold: #f2b705;
+  --color-marigold-soft: #fff4cc;
+  --color-paper: #f8f8f6;
+}
+
+/* Base styles live in the base layer so Tailwind utility classes can override them */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-paper);
+    color: #334155;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    color: var(--color-ink);
+    letter-spacing: -0.01em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  /* keep focus visible on dark backgrounds */
+  .bg-ink :focus-visible,
+  .bg-ink:focus-visible {
+    outline-color: var(--color-marigold);
+  }
+}
+
+/* Cardboard texture used for the box-flap illustration */
+.kraft-surface {
+  background-color: var(--color-kraft);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 2px, transparent 2px 9px),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.035) 0 1px, transparent 1px 4px);
+}
+
+/* Perforated edge for loyalty card / coupons */
+.perforated-right {
+  -webkit-mask: radial-gradient(circle 7px at right center, transparent 98%, #000) right / 100% 22px repeat-y;
+  mask: radial-gradient(circle 7px at right center, transparent 98%, #000) right / 100% 22px repeat-y;
+}
+
+/* The one celebratory moment: points landing after a claim */
+@keyframes coin-pop {
+  0% { transform: scale(0.4) rotate(-20deg); opacity: 0; }
+  60% { transform: scale(1.12) rotate(6deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+.animate-coin-pop { animation: coin-pop 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

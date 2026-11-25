@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getProducts, saveProduct } from '../../api/mockApi'
-import { Alert, Badge, Button, Card, Input, Spinner } from '../../components/ui'
+import Icon from '../../components/Icon'
+import { AdminHeader, Alert, Badge, Button, Card, Input, Spinner, Table, td, th } from '../../components/ui'
 
 const empty = { name: '', sku: '', points: '' }
 
@@ -31,49 +32,53 @@ export default function Products() {
     load()
   }
 
-  if (!products) return <Spinner />
+  if (!products) return <Spinner label="Loading products" />
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Products</h1>
+    <>
+      <AdminHeader title="Products" description="Set how many points each product's code is worth" />
 
       <Card>
-        <h2 className="font-semibold mb-3">{form.id ? 'Edit product' : 'Add product'}</h2>
-        <form onSubmit={handleSubmit} className="grid gap-3 md:grid-cols-4 items-end">
-          <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <Input label="SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
+        <h2 className="text-lg font-bold mb-4">{form.id ? `Edit ${form.name}` : 'Add a product'}</h2>
+        <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-[2fr_1fr_1fr_auto] items-end">
+          <Input label="Product name" placeholder="e.g. Pressure Cooker 3L" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input label="SKU" placeholder="PC-3000" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
           <Input label="Points per box" type="number" min="1" value={form.points} onChange={(e) => setForm({ ...form, points: e.target.value })} />
           <div className="flex gap-2">
-            <Button type="submit">{form.id ? 'Save' : 'Add'}</Button>
-            {form.id && <Button type="button" variant="secondary" onClick={() => setForm(empty)}>Cancel</Button>}
+            <Button type="submit">{form.id ? 'Save changes' : <><Icon name="plus" className="w-4 h-4" /> Add product</>}</Button>
+            {form.id && <Button type="button" variant="ghost" onClick={() => setForm(empty)}>Cancel</Button>}
           </div>
         </form>
-        <div className="mt-3"><Alert>{error}</Alert></div>
+        {error && <div className="mt-4"><Alert>{error}</Alert></div>}
       </Card>
 
-      <Card>
-        <table className="w-full text-sm">
-          <thead className="text-left text-gray-500 border-b">
-            <tr><th className="py-2">Name</th><th>SKU</th><th>Points</th><th>Status</th><th></th></tr>
+      <Card className="mt-6">
+        <Table>
+          <thead>
+            <tr>
+              <th className={th}>Product</th>
+              <th className={th}>SKU</th>
+              <th className={th}>Points</th>
+              <th className={th}>Status</th>
+              <th className={th}><span className="sr-only">Actions</span></th>
+            </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody>
             {products.map((p) => (
-              <tr key={p.id}>
-                <td className="py-2">{p.name}</td>
-                <td className="font-mono">{p.sku}</td>
-                <td>{p.points}</td>
-                <td><Badge status={p.active ? 'ACTIVE' : 'INACTIVE'} /></td>
-                <td className="text-right space-x-2 whitespace-nowrap">
-                  <button className="text-indigo-600 hover:underline" onClick={() => setForm(p)}>Edit</button>
-                  <button className="text-gray-600 hover:underline" onClick={() => toggleActive(p)}>
-                    {p.active ? 'Deactivate' : 'Activate'}
-                  </button>
+              <tr key={p.id} className="hover:bg-slate-50">
+                <td className={`${td} font-medium text-ink`}>{p.name}</td>
+                <td className={`${td} font-mono text-xs`}>{p.sku}</td>
+                <td className={`${td} font-display font-bold text-ink`}>{p.points}</td>
+                <td className={td}><Badge status={p.active ? 'ACTIVE' : 'INACTIVE'} /></td>
+                <td className={`${td} text-right whitespace-nowrap space-x-1`}>
+                  <Button variant="ghost" size="sm" onClick={() => setForm(p)}>Edit</Button>
+                  <Button variant="ghost" size="sm" onClick={() => toggleActive(p)}>{p.active ? 'Hide' : 'Show'}</Button>
                 </td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </Table>
       </Card>
-    </div>
+    </>
   )
 }
